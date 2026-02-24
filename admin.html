@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Felooxerr — Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#060810;--surface:#0d1117;--surface2:#111827;--border:#1e2436;
+  --cyan:#00d4ff;--red:#e53935;--green:#00e676;--yellow:#ffd740;
+  --text:#f0f4ff;--muted:#6b7a9e;--white:#fff;
+}
+html,body{height:100%;font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text)}
+body{overflow:hidden}
+
+/* LOGIN SCREEN */
+#login-screen{
+  position:fixed;inset:0;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  z-index:1000;
+  background-image:linear-gradient(rgba(0,212,255,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,.015) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+.login-box{
+  background:var(--surface);border:1px solid var(--border);border-radius:16px;
+  padding:2.5rem;width:360px;text-align:center;
+  box-shadow:0 0 60px rgba(0,212,255,.06);
+}
+.login-icon{font-size:2.5rem;margin-bottom:1rem}
+.login-title{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:.1em;color:var(--white);margin-bottom:.3rem}
+.login-sub{font-size:.78rem;color:var(--muted);margin-bottom:1.8rem}
+.login-input{
+  width:100%;padding:.85rem 1rem;background:var(--bg);border:1px solid var(--border);
+  border-radius:8px;color:var(--text);font-family:'Nunito',sans-serif;font-size:.9rem;
+  outline:none;text-align:center;letter-spacing:.15em;transition:border-color .2s;margin-bottom:1rem;
+}
+.login-input:focus{border-color:rgba(0,212,255,.5)}
+.login-input::placeholder{letter-spacing:normal;color:var(--muted)}
+.login-btn{
+  width:100%;padding:.9rem;background:var(--cyan);color:#000;
+  font-family:'Nunito',sans-serif;font-size:.88rem;font-weight:800;
+  border:none;border-radius:8px;cursor:pointer;transition:background .2s;
+}
+.login-btn:hover{background:#33deff}
+.login-error{color:#ff5252;font-size:.78rem;margin-top:.8rem;display:none}
+
+/* ADMIN LAYOUT */
+#admin{display:none;height:100vh;flex-direction:column}
+.admin-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.9rem 1.5rem;
+  background:var(--surface);border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.admin-logo{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:.1em;color:var(--white);display:flex;align-items:center;gap:.5rem}
+.rblx-icon{width:24px;height:24px;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:900;color:#fff;clip-path:polygon(10% 0%,90% 0%,100% 10%,100% 90%,90% 100%,10% 100%,0% 90%,0% 10%)}
+.admin-meta{display:flex;align-items:center;gap:1rem}
+.unread-badge{background:var(--cyan);color:#000;font-size:.65rem;font-weight:800;padding:.2rem .6rem;border-radius:999px;letter-spacing:.08em}
+.logout-btn{font-size:.72rem;color:var(--muted);background:none;border:1px solid var(--border);border-radius:6px;padding:.4rem .8rem;cursor:pointer;transition:all .2s;font-family:'Nunito',sans-serif}
+.logout-btn:hover{border-color:#ff5252;color:#ff5252}
+.refresh-btn{font-size:.72rem;color:var(--cyan);background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.2);border-radius:6px;padding:.4rem .8rem;cursor:pointer;transition:all .2s;font-family:'Nunito',sans-serif;font-weight:700}
+.refresh-btn:hover{background:rgba(0,212,255,.15)}
+
+.admin-body{display:flex;flex:1;overflow:hidden}
+
+/* SIDEBAR - message list */
+.msg-sidebar{
+  width:320px;border-right:1px solid var(--border);
+  display:flex;flex-direction:column;flex-shrink:0;
+  background:var(--surface);
+}
+.sidebar-header{padding:1rem 1.2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.sidebar-title{font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.filter-btns{display:flex;gap:.4rem}
+.filter-btn{font-size:.6rem;padding:.25rem .6rem;border-radius:4px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;transition:all .2s;font-family:'Nunito',sans-serif}
+.filter-btn.active{border-color:var(--cyan);color:var(--cyan);background:rgba(0,212,255,.08)}
+
+.msg-list{overflow-y:auto;flex:1}
+.msg-list::-webkit-scrollbar{width:4px}
+.msg-list::-webkit-scrollbar-track{background:transparent}
+.msg-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+.msg-item{
+  padding:1rem 1.2rem;border-bottom:1px solid var(--border);
+  cursor:pointer;transition:background .2s;position:relative;
+}
+.msg-item:hover{background:rgba(255,255,255,.03)}
+.msg-item.active{background:rgba(0,212,255,.06);border-left:3px solid var(--cyan)}
+.msg-item.unread .msg-item-name::after{content:'';display:inline-block;width:7px;height:7px;background:var(--cyan);border-radius:50%;margin-left:.5rem;vertical-align:middle;box-shadow:0 0 6px var(--cyan)}
+.msg-item-name{font-size:.85rem;font-weight:800;color:var(--white);margin-bottom:.2rem}
+.msg-item-platform{font-size:.65rem;letter-spacing:.1em;color:var(--cyan);margin-bottom:.3rem}
+.msg-item-preview{font-size:.75rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px}
+.msg-item-time{font-size:.6rem;color:var(--muted);position:absolute;top:1rem;right:1rem}
+
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);font-size:.82rem;gap:.5rem;padding:2rem}
+.empty-state .icon{font-size:2.5rem;opacity:.4}
+
+/* MAIN - message detail */
+.msg-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.msg-detail{flex:1;overflow-y:auto;padding:2rem}
+.msg-detail::-webkit-scrollbar{width:4px}
+.msg-detail::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+.no-selection{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  color:var(--muted);
+}
+.no-selection .icon{font-size:3rem;opacity:.3;margin-bottom:1rem}
+.no-selection p{font-size:.85rem}
+
+.detail-header{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:1.2rem 2rem;display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+.detail-name{font-size:1.1rem;font-weight:800;color:var(--white)}
+.detail-platform{font-size:.72rem;color:var(--cyan);margin-top:.2rem;font-weight:700}
+.detail-handle{font-size:.78rem;color:var(--muted);margin-top:.1rem}
+.detail-actions{display:flex;gap:.6rem}
+.action-btn{
+  display:flex;align-items:center;gap:.4rem;
+  padding:.5rem 1rem;border-radius:6px;border:1px solid var(--border);
+  background:none;color:var(--muted);font-family:'Nunito',sans-serif;font-size:.72rem;
+  cursor:pointer;transition:all .2s;font-weight:700;
+}
+.action-btn.cyan{border-color:rgba(0,212,255,.3);color:var(--cyan);background:rgba(0,212,255,.07)}
+.action-btn.cyan:hover{background:rgba(0,212,255,.15)}
+.action-btn.red{border-color:rgba(255,82,82,.3);color:#ff5252;background:rgba(255,82,82,.07)}
+.action-btn.red:hover{background:rgba(255,82,82,.15)}
+.action-btn.green{border-color:rgba(0,230,118,.3);color:var(--green);background:rgba(0,230,118,.07)}
+.action-btn.green:hover{background:rgba(0,230,118,.15)}
+
+.detail-time{font-size:.7rem;color:var(--muted);margin-bottom:1.5rem;font-family:'Space Mono',monospace}
+.detail-msg-box{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:1.5rem;margin-bottom:1.5rem;font-size:.88rem;line-height:1.7;color:var(--text);
+  white-space:pre-wrap;
+}
+
+/* REPLY SECTION */
+.reply-section{
+  border-top:1px solid var(--border);padding:1.2rem 2rem;background:var(--surface);flex-shrink:0;
+}
+.reply-label{font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:.6rem}
+.reply-row{display:flex;gap:.8rem;align-items:flex-end}
+.reply-input{
+  flex:1;padding:.75rem 1rem;background:var(--bg);border:1px solid var(--border);
+  border-radius:8px;color:var(--text);font-family:'Nunito',sans-serif;font-size:.85rem;
+  outline:none;resize:none;min-height:48px;max-height:120px;transition:border-color .2s;
+}
+.reply-input:focus{border-color:rgba(0,212,255,.4)}
+.reply-input::placeholder{color:var(--muted)}
+.reply-send{
+  padding:.75rem 1.4rem;background:var(--cyan);color:#000;
+  font-family:'Nunito',sans-serif;font-size:.8rem;font-weight:800;
+  border:none;border-radius:8px;cursor:pointer;transition:background .2s;
+  white-space:nowrap;flex-shrink:0;
+}
+.reply-send:hover{background:#33deff}
+
+.reply-saved{
+  font-size:.75rem;color:var(--green);margin-top:.6rem;
+  display:none;align-items:center;gap:.4rem;
+}
+
+/* PLATFORM ICONS */
+.platform-icon{font-size:1rem;vertical-align:middle}
+
+/* STATS BAR */
+.stats-bar{
+  display:flex;gap:1.5rem;padding:.7rem 1.5rem;
+  background:rgba(0,0,0,.3);border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.stat-item{font-size:.68rem;color:var(--muted);display:flex;align-items:center;gap:.4rem}
+.stat-item strong{color:var(--text)}
+.stat-item .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.dot-cyan{background:var(--cyan)}
+.dot-yellow{background:var(--yellow)}
+.dot-green{background:var(--green)}
+
+@media(max-width:700px){
+  .msg-sidebar{width:100%;border-right:none;border-bottom:1px solid var(--border);max-height:40vh}
+  .admin-body{flex-direction:column}
+  .msg-main{min-height:0}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-icon">🔐</div>
+    <div class="login-title">Admin Panel</div>
+    <div class="login-sub">Felooxerr's private message dashboard</div>
+    <input class="login-input" id="pwd-input" type="password" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="login-btn" onclick="doLogin()">Access Dashboard</button>
+    <div class="login-error" id="login-error">❌ Wrong password. Try again.</div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="admin">
+  <div class="admin-header">
+    <div class="admin-logo">
+      <div class="rblx-icon">R</div>
+      Felooxerr — Admin
+    </div>
+    <div class="admin-meta">
+      <span class="unread-badge" id="unread-count">0 unread</span>
+      <button class="refresh-btn" onclick="loadMessages()">🔄 Refresh</button>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="stats-bar" id="stats-bar">
+    <div class="stat-item"><span class="dot dot-cyan"></span>Total: <strong id="s-total">0</strong></div>
+    <div class="stat-item"><span class="dot dot-yellow"></span>Unread: <strong id="s-unread">0</strong></div>
+    <div class="stat-item"><span class="dot dot-green"></span>Replied: <strong id="s-replied">0</strong></div>
+  </div>
+
+  <div class="admin-body">
+    <!-- SIDEBAR -->
+    <div class="msg-sidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-title">Messages</span>
+        <div class="filter-btns">
+          <button class="filter-btn active" id="f-all" onclick="setFilter('all')">All</button>
+          <button class="filter-btn" id="f-unread" onclick="setFilter('unread')">Unread</button>
+          <button class="filter-btn" id="f-replied" onclick="setFilter('replied')">Replied</button>
+        </div>
+      </div>
+      <div class="msg-list" id="msg-list"></div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="msg-main" id="msg-main">
+      <div class="no-selection" id="no-selection">
+        <div class="icon">💬</div>
+        <p>Select a message to read it</p>
+      </div>
+      <div id="detail-view" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+        <div class="detail-header">
+          <div>
+            <div class="detail-name" id="d-name"></div>
+            <div class="detail-platform" id="d-platform"></div>
+            <div class="detail-handle" id="d-handle"></div>
+          </div>
+          <div class="detail-actions">
+            <button class="action-btn green" onclick="markReplied()">✅ Mark Replied</button>
+            <button class="action-btn red" onclick="deleteMsg()">🗑 Delete</button>
+          </div>
+        </div>
+        <div class="msg-detail">
+          <div class="detail-time" id="d-time"></div>
+          <div class="detail-msg-box" id="d-msg"></div>
+          <div id="d-reply-box" style="display:none;margin-top:1rem">
+            <div style="font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:.5rem">Your saved reply note</div>
+            <div style="background:rgba(0,230,118,.05);border:1px solid rgba(0,230,118,.2);border-radius:8px;padding:1rem;font-size:.85rem;color:var(--green);white-space:pre-wrap" id="d-reply-text"></div>
+          </div>
+        </div>
+        <div class="reply-section">
+          <div class="reply-label">📝 Write a reply note (save for reference)</div>
+          <div class="reply-row">
+            <textarea class="reply-input" id="reply-input" placeholder="Type your reply / notes here..."></textarea>
+            <button class="reply-send" onclick="saveReply()">💾 Save</button>
+          </div>
+          <div class="reply-saved" id="reply-saved">✅ Reply note saved!</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const ADMIN_PASSWORD = 'felooxerr2026'; // ← CHANGE THIS TO YOUR OWN PASSWORD
+let messages = [];
+let currentId = null;
+let currentFilter = 'all';
+
+function doLogin(){
+  const val = document.getElementById('pwd-input').value;
+  if(val === ADMIN_PASSWORD){
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('admin').style.display='flex';
+    loadMessages();
+  } else {
+    document.getElementById('login-error').style.display='block';
+    document.getElementById('pwd-input').value='';
+    document.getElementById('pwd-input').focus();
+  }
+}
+
+function logout(){
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('admin').style.display='none';
+  document.getElementById('pwd-input').value='';
+  messages=[];currentId=null;
+}
+
+function platformIcon(p){
+  const icons={'Discord':'💬','Twitter / X':'🐦','Roblox DM':'🎮','Other':'📩'};
+  return icons[p]||'📩';
+}
+
+function timeAgo(iso){
+  const d=new Date(iso),now=new Date(),diff=Math.floor((now-d)/1000);
+  if(diff<60)return 'Just now';
+  if(diff<3600)return Math.floor(diff/60)+'m ago';
+  if(diff<86400)return Math.floor(diff/3600)+'h ago';
+  return Math.floor(diff/86400)+'d ago';
+}
+
+function formatTime(iso){
+  return new Date(iso).toLocaleString();
+}
+
+async function loadMessages(){
+  try{
+    const res = await window.storage.list('msg_', true);
+    const keys = res ? res.keys : [];
+    const loaded = [];
+    for(const key of keys){
+      try{
+        const item = await window.storage.get(key, true);
+        if(item) loaded.push(JSON.parse(item.value));
+      }catch(e){}
+    }
+    messages = loaded.sort((a,b)=>new Date(b.time)-new Date(a.time));
+    renderList();
+    updateStats();
+    if(currentId){
+      const stillExists = messages.find(m=>m.id===currentId);
+      if(stillExists) showDetail(currentId);
+      else { currentId=null; showNoSelection(); }
+    }
+  }catch(e){
+    console.error('Failed to load messages',e);
+  }
+}
+
+function filteredMessages(){
+  if(currentFilter==='unread') return messages.filter(m=>!m.read);
+  if(currentFilter==='replied') return messages.filter(m=>m.reply);
+  return messages;
+}
+
+function renderList(){
+  const list=document.getElementById('msg-list');
+  const msgs=filteredMessages();
+  if(msgs.length===0){
+    list.innerHTML=`<div class="empty-state"><div class="icon">📭</div><span>No messages yet</span></div>`;
+    return;
+  }
+  list.innerHTML=msgs.map(m=>`
+    <div class="msg-item ${!m.read?'unread':''} ${m.id===currentId?'active':''}" onclick="showDetail('${m.id}')">
+      <div class="msg-item-name">${esc(m.name)}</div>
+      <div class="msg-item-platform">${platformIcon(m.platform)} ${esc(m.platform)}</div>
+      <div class="msg-item-preview">${esc(m.message)}</div>
+      <div class="msg-item-time">${timeAgo(m.time)}</div>
+    </div>
+  `).join('');
+}
+
+function updateStats(){
+  const total=messages.length;
+  const unread=messages.filter(m=>!m.read).length;
+  const replied=messages.filter(m=>m.reply).length;
+  document.getElementById('s-total').textContent=total;
+  document.getElementById('s-unread').textContent=unread;
+  document.getElementById('s-replied').textContent=replied;
+  document.getElementById('unread-count').textContent=unread+' unread';
+}
+
+async function showDetail(id){
+  currentId=id;
+  const m=messages.find(x=>x.id===id);
+  if(!m)return;
+
+  // Mark as read
+  if(!m.read){
+    m.read=true;
+    await window.storage.set(m.id, JSON.stringify(m), true);
+    updateStats();
+  }
+
+  renderList();
+  document.getElementById('no-selection').style.display='none';
+  const dv=document.getElementById('detail-view');
+  dv.style.display='flex';
+
+  document.getElementById('d-name').textContent=m.name;
+  document.getElementById('d-platform').innerHTML=`${platformIcon(m.platform)} ${m.platform}`;
+  document.getElementById('d-handle').textContent='Handle: '+m.handle;
+  document.getElementById('d-time').textContent='Received: '+formatTime(m.time);
+  document.getElementById('d-msg').textContent=m.message;
+  document.getElementById('reply-input').value=m.reply||'';
+  document.getElementById('reply-saved').style.display='none';
+
+  const rb=document.getElementById('d-reply-box');
+  if(m.reply){
+    rb.style.display='block';
+    document.getElementById('d-reply-text').textContent=m.reply;
+  } else {
+    rb.style.display='none';
+  }
+}
+
+function showNoSelection(){
+  document.getElementById('no-selection').style.display='flex';
+  document.getElementById('detail-view').style.display='none';
+}
+
+async function saveReply(){
+  if(!currentId)return;
+  const m=messages.find(x=>x.id===currentId);
+  if(!m)return;
+  const reply=document.getElementById('reply-input').value.trim();
+  m.reply=reply;
+  await window.storage.set(m.id, JSON.stringify(m), true);
+  const rs=document.getElementById('reply-saved');
+  rs.style.display='flex';
+  setTimeout(()=>rs.style.display='none',2500);
+  const rb=document.getElementById('d-reply-box');
+  if(reply){
+    rb.style.display='block';
+    document.getElementById('d-reply-text').textContent=reply;
+  } else {
+    rb.style.display='none';
+  }
+}
+
+async function markReplied(){
+  if(!currentId)return;
+  const m=messages.find(x=>x.id===currentId);
+  if(!m)return;
+  const note=`[Replied on ${new Date().toLocaleString()}]`;
+  m.reply = (m.reply ? m.reply+'\n' : '') + note;
+  m.read=true;
+  await window.storage.set(m.id, JSON.stringify(m), true);
+  showDetail(currentId);
+  updateStats();
+  renderList();
+}
+
+async function deleteMsg(){
+  if(!currentId)return;
+  if(!confirm('Delete this message?'))return;
+  await window.storage.delete(currentId, true);
+  messages=messages.filter(m=>m.id!==currentId);
+  currentId=null;
+  showNoSelection();
+  renderList();
+  updateStats();
+}
+
+function setFilter(f){
+  currentFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('f-'+f).classList.add('active');
+  renderList();
+}
+
+function esc(str){
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Auto-refresh every 30s
+setInterval(()=>{
+  if(document.getElementById('admin').style.display==='flex') loadMessages();
+},30000);
+
+document.getElementById('pwd-input').focus();
+</script>
+</body>
+</html>
